@@ -43,11 +43,11 @@ celery_app.conf.update(
 celery_app.conf.beat_schedule = {
     "run_parse_domain_honlapok_task": {
         "task": "backend.celery.tasks.parse_domain_honlapok_task.run_parse_domain_honlapok_task",
-        "schedule": crontab(minute="*/5"),
+        "schedule": crontab(minute="*/30"),
     },
     "run_parse_domain_reklamoldalak_task": {
         "task": "backend.celery.tasks.parse_domain_reklamoldalak_task.run_parse_domain_reklamoldalak_task",
-        "schedule": crontab(minute="*/5"),
+        "schedule": crontab(minute="*/30"),
     },
 }
 
