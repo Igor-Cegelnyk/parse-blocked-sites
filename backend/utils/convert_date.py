@@ -57,3 +57,12 @@ def time_int_to_str(time_int: int) -> str:
         return f"{h:02}:{m:02}:{s_:02}"
     except ValueError as e:
         raise ValueError(f"Invalid time integer: {time_int}") from e
+
+
+def datetime_int_to_datetime(date_int: int, time_int: int) -> datetime:
+    """
+    :param date_int: 20251024
+    :param time_int: 170526
+    :return: datetime(2025-10-24 17:05:26)
+    """
+    return datetime.strptime(f"{date_int} {str(time_int).zfill(6)}", "%Y%m%d %H%M%S")
