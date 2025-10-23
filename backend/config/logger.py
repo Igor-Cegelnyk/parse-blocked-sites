@@ -19,7 +19,7 @@ class Logger:
             "log",
             caller_dir_name,
         )
-        self.log_filename = os.path.join(self.log_dir, "log.log")
+        self.log_filename = os.path.join(self.log_dir, "log")
         self.logger = logging.getLogger(caller_dir_name)
         self.logger.setLevel(logging.INFO)
         self._setup_handler()
