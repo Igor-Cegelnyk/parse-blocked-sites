@@ -1,5 +1,4 @@
-
-from sqlalchemy import String, Enum, Integer, text
+from sqlalchemy import String, Enum, Integer, text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.models import Base
@@ -12,7 +11,6 @@ class Domain(Base, IdIntPkMixin):
     domain_name: Mapped[str] = mapped_column(
         String(150),
         unique=True,
-        index=True,
         nullable=False,
     )
 
@@ -38,4 +36,8 @@ class Domain(Base, IdIntPkMixin):
         nullable=False,
         default=current_time_int,
         server_default=text("CAST(to_char(now(),'HH24MISS') AS INTEGER)"),
+    )
+
+    __table_args__ = (
+        UniqueConstraint("domain_name", "block_list", name="uix_domain_blocklist"),
     )

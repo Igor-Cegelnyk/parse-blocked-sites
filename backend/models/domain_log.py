@@ -1,9 +1,8 @@
-
 from sqlalchemy import Enum, Integer, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.models import Base
-from backend.models.enums import LogStatusEnum
+from backend.models.enums import LogStatusEnum, BlockListEnum
 from backend.models.mixins import IdIntPkMixin
 from backend.utils.convert_date import current_date_int, current_time_int
 
@@ -32,6 +31,11 @@ class DomainLog(Base, IdIntPkMixin):
 
     log_status: Mapped[LogStatusEnum] = mapped_column(
         Enum(LogStatusEnum),
+        nullable=False,
+    )
+
+    block_list: Mapped[BlockListEnum] = mapped_column(
+        Enum(BlockListEnum),
         nullable=False,
     )
 
