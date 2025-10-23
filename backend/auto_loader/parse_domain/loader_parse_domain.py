@@ -88,4 +88,4 @@ async def loader_parse_domains(api_settings: "Settings") -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(loader_parse_domains(settings.advertising_api))
+    asyncio.run(loader_parse_domains(settings.website_api))
