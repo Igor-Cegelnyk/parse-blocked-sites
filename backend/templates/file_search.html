@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% set active_tab = 'file-search' %}
+{% block title %}Пошук по файлу — FastAPI Dashboard{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm p-4">
+  <h5 class="mb-3">Завантажте файл для пошуку доменів</h5>
+  <input type="file" class="form-control mb-3" id="fileInput" accept="">
+  <button id="uploadBtn" class="btn btn-success">🔼 Завантажити</button>
+</div>
+
+<table class="table table-striped mt-4">
+  <thead class="table-primary">
+    <tr>
+      <th>Домен</th>
+      <th>IP адреса</th>
+      <th>Список</th>
+    </tr>
+  </thead>
+  <tbody id="resultsTable"></tbody>
+</table>
+
+<!-- Пагінація -->
+  <nav>
+    <ul class="pagination justify-content-center" id="pagination"></ul>
+  </nav>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/fileSearch.js') }}"></script>
+{% endblock %}

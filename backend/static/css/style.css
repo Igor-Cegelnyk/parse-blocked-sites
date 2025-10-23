@@ -1,0 +1,43 @@
+/* Основні стилі */
+body {
+  background-color: #f8f9fa;
+  font-family: "Inter", sans-serif;
+}
+
+.logo {
+  color: #0d6efd;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.card {
+  border-radius: 1rem;
+}
+
+table {
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .logo {
+    font-size: 1.5rem;
+  }
+}
+
+/* Sticky footer */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1; /* головний контент займає весь доступний простір */
+}

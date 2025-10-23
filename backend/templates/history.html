@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% set active_tab = 'history' %}
+
+{% block content %}
+<div class="card shadow-sm p-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5>Історія завантажень</h5>
+    <button id="manualLoadBtn" class="btn btn-primary btn-sm">Ручне завантаження</button>
+  </div>
+
+  <table class="table table-hover">
+    <thead class="table-light">
+      <tr>
+        <th>Дата</th>
+        <th>Час</th>
+        <th>Кількість виявлених доменів</th>
+        <th>Кількість нових доменів</th>
+        <th>Кількість видалених</th>
+        <th>Статус завантаження</th>
+      </tr>
+    </thead>
+    <tbody id="historyTable">
+      <tr>
+        <td colspan="6" class="text-center text-muted">Завантаження...</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <nav>
+    <ul class="pagination justify-content-center" id="pagination"></ul>
+  </nav>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/history.js') }}"></script>
+{% endblock %}
