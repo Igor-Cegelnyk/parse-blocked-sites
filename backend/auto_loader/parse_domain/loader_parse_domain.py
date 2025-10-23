@@ -1,7 +1,7 @@
 import asyncio
 from typing import List, TYPE_CHECKING
 
-from backend.config import Logger, settings
+from backend.config import Logger
 from backend.database import db_helper
 from backend.models import LogStatusEnum, BlockListEnum
 from backend.repositories.domain import DomainRepository
@@ -10,16 +10,27 @@ from backend.schemas.domain_log import DomainLogCreate
 from backend.services.domain_log_service import DomainLogService
 from backend.services.domain_service import DomainService
 from backend.services.parse_service import ParseService
+from backend.utils.convert_date import datetime_int_to_datetime
 from backend.utils.profile_decorator import profile
 
 if TYPE_CHECKING:
     from backend.config.config import Settings
+    from backend.models.domain_log import DomainLog
 
 log = Logger().get_logger()
 
 
-async def parse_domains(api_settings: "Settings") -> List:
-    parse_service = ParseService(api_settings)
+async def parse_domains(
+    api_settings: "Settings",
+    last_record: List["DomainLog"],
+) -> List:
+    update_datetime = None
+    if last_record:
+        update_datetime = datetime_int_to_datetime(
+            date_int=last_record[0].created_date,
+            time_int=last_record[0].created_time,
+        )
+    parse_service = ParseService(api_settings, update_datetime)
     results = await parse_service.get_all_domains()
     return results
 
@@ -35,10 +46,21 @@ async def loader_parse_domains(api_settings: "Settings") -> None:
     async with db_helper.session_factory() as session:
         domain_service = DomainService(DomainRepository(session=session))
         domain_log_service = DomainLogService(DomainLogRepository(session=session))
+        last_log_record = await domain_log_service.get_all(
+            filters=domain_log.model_dump(exclude_unset=True),
+            order_by="id",
+            desc_order=True,
+            limit=1,
+        )
 
         try:
-            domains = await parse_domains(api_settings)
+            domains = await parse_domains(api_settings, last_log_record)
             log.info("Знайдено %s заблокованих доменів" % len(domains))
+
+            if len(domains) == 0:
+                domain_log.log_status = LogStatusEnum.NO_CHANGES
+                await domain_log_service.create(domain_log)
+                return None
 
             domains_uniq = []
             domain_names_set = set()
@@ -88,4 +110,4 @@ async def loader_parse_domains(api_settings: "Settings") -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(loader_parse_domains(settings.website_api))
+    asyncio.run(loader_parse_domains())

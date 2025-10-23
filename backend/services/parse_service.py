@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, List, AsyncGenerator
+from typing import TYPE_CHECKING, List, AsyncGenerator, Union
 
 import aiodns
 
@@ -8,15 +8,21 @@ from backend.schemas.domain import DomainCreate
 
 if TYPE_CHECKING:
     from backend.config.config import Settings
+    from datetime import datetime
 
 
 class ParseService:
 
-    def __init__(self, api_settings: "Settings") -> None:
+    def __init__(
+        self,
+        api_settings: "Settings",
+        exist_date: Union["datetime", None],
+    ) -> None:
         self.api_settings = api_settings
+        self.exist_date = exist_date
 
     async def fetch_domains(self) -> List[List[str]]:
-        parser = DataParser(self.api_settings)
+        parser = DataParser(self.api_settings, self.exist_date)
         domains = await parser.fetch_data()
         return domains
 
@@ -70,5 +76,7 @@ class ParseService:
 
     async def get_all_domains(self):
         domains = await self.fetch_domains()
-        results = [item async for item in self.generate_domains(domains)]
-        return results
+        if domains:
+            results = [item async for item in self.generate_domains(domains)]
+            return results
+        return []

@@ -1,5 +1,6 @@
 import asyncio
-from typing import TYPE_CHECKING
+from datetime import datetime
+from typing import TYPE_CHECKING, Union
 import httpx
 
 from bs4 import BeautifulSoup
@@ -10,8 +11,13 @@ if TYPE_CHECKING:
 
 
 class DataParser:
-    def __init__(self, api_settings: "Settings"):
+    def __init__(
+        self,
+        api_settings: "Settings",
+        exist_date: Union[datetime, None],
+    ):
         self.api_settings = api_settings
+        self.exist_date = exist_date
         self.data = self.api_settings.default_post_data
         self.timeout = Timeout(connect=60.0, read=60.0, write=30.0, pool=60.0)
         self.max_retries = 3  # кількість спроб при помилках з'єднання
@@ -28,9 +34,12 @@ class DataParser:
                     raise
                 await asyncio.sleep(self.retry_delay)
 
-    async def get_wdt_nonce(self, client: httpx.AsyncClient) -> str:
-        html = await self.safe_get(client, self.api_settings.page_url)
-        soup = BeautifulSoup(html, "html.parser")
+    @staticmethod
+    def get_update_date(soup: BeautifulSoup):
+        date_text = soup.find("em").find("span")
+        return datetime.strptime(date_text.get_text(strip=True), "%Y.%m.%d. %H:%M")
+
+    def get_wdt_nonce(self, soup: BeautifulSoup):
         wdt_nonce = soup.find(
             "input",
             {"id": f"wdtNonceFrontendServerSide_{self.api_settings.table_id}"},
@@ -57,7 +66,14 @@ class DataParser:
             headers=self.api_settings.default_headers,
             timeout=self.timeout,
         ) as client:
-            wdt_nonce = await self.get_wdt_nonce(client)
+            html = await self.safe_get(client, self.api_settings.page_url)
+            soup = BeautifulSoup(html, "html.parser")
+
+            update_date = self.get_update_date(soup)
+            if self.exist_date and update_date < self.exist_date:
+                return []
+
+            wdt_nonce = self.get_wdt_nonce(soup)
             self.data["wdtNonce"] = wdt_nonce
 
             first_response = await self.post_json(client)
