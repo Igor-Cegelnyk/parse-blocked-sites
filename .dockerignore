@@ -1,0 +1,16 @@
+.env
+*.log
+__pycache__/
+*.pyc
+*.pyo
+dist/
+build/
+*.egg-info/
+*.md
+.idea/
+.vscode/
+*.db
+log/
+*.bak
+*.dat
+*.dir
