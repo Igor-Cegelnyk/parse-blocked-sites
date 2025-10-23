@@ -6,9 +6,11 @@ from starlette import status
 
 from backend.auto_loader.parse_domain.loader_parse_domain import loader_parse_domains
 from backend.config import settings
+from backend.config.config import WebsitesApiSettings
+from backend.models import BlockListEnum
 from backend.routers.dependencies import get_domain_log_service
 
-from backend.schemas.domain_log import DomainLogRead
+from backend.schemas.domain_log import DomainLogRead, DomainLogParam
 
 if TYPE_CHECKING:
     from backend.services.domain_log_service import DomainLogService
@@ -27,7 +29,11 @@ router = APIRouter(
 )
 async def history(request: Request):
     templates = request.app.state.templates
-    return templates.TemplateResponse("history.html", {"request": request})
+    block_lists = [e.value for e in BlockListEnum]
+    return templates.TemplateResponse(
+        "history.html",
+        {"request": request, "block_lists": block_lists},
+    )
 
 
 @router.get(
@@ -72,9 +78,13 @@ async def get_domain_logs(
         500: {"description": "Сталася помилка при парсингу даних"},
     },
 )
-async def parse_domain():
+async def parse_domain(params: DomainLogParam):
+    if params.block_list == "honlapok":
+        api_settings = settings.website_api
+    else:
+        api_settings = settings.advertising_api
     try:
-        await loader_parse_domains()
+        await loader_parse_domains(api_settings)
         return Response(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(

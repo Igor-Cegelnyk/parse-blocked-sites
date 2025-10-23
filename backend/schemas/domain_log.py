@@ -6,6 +6,10 @@ from backend.models import LogStatusEnum, BlockListEnum
 from backend.utils.convert_date import date_int_to_str, time_int_to_str
 
 
+class DomainLogParam(BaseModel):
+    block_list: str
+
+
 class DomainLogBase(BaseModel):
     parse_domain_quantity: int = Field(
         ...,

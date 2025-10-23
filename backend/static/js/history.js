@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const tableBody = document.getElementById("historyTable");
   const pagination = document.getElementById("pagination");
   const manualLoadBtn = document.getElementById("manualLoadBtn");
+  const blockListSelect = document.getElementById("blockListSelect");
   const PAGE_SIZE = 25;
   let currentPage = 1;
 
@@ -40,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
         row.innerHTML = `
           <td>${log.created_date}</td>
           <td>${log.created_time}</td>
+          <td>${log.block_list}</td>
           <td>${log.parse_domain_quantity}</td>
           <td>${log.new_domain_quantity}</td>
           <td>${log.remove_domain_quantity}</td>
@@ -92,17 +94,24 @@ document.addEventListener("DOMContentLoaded", () => {
   manualLoadBtn.addEventListener("click", async () => {
     manualLoadBtn.disabled = true;
     manualLoadBtn.textContent = "Завантаження...";
+
+    const selectedBlockList = blockListSelect.value;
+
     try {
-      const response = await fetch("/history/log", { method: "POST" });
+      const response = await fetch("/history/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ block_list: selectedBlockList }),
+      });
       if (!response.ok) throw new Error("Помилка при ручному завантаженні");
 
-      fetchHistory(currentPage);
     } catch (err) {
       alert("Не вдалося виконати ручне завантаження");
-      console.error(err);
+      // console.error(err);
     } finally {
       manualLoadBtn.disabled = false;
       manualLoadBtn.textContent = "Ручне завантаження";
+      fetchHistory(currentPage);
     }
   });
 

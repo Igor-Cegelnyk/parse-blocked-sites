@@ -1,10 +1,16 @@
 {% extends "base.html" %}
 {% set active_tab = 'history' %}
+{% block title %}Історія завантаження — FastAPI Dashboard{% endblock %}
 
 {% block content %}
 <div class="card shadow-sm p-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h5>Історія завантажень</h5>
+    <select id="blockListSelect" class="form-select form-select-sm" style="width: 200px;">
+      {% for value in block_lists %}
+      <option value="{{ value }}">{{ value }}</option>
+      {% endfor %}
+    </select>
     <button id="manualLoadBtn" class="btn btn-primary btn-sm">Ручне завантаження</button>
   </div>
 
@@ -13,6 +19,7 @@
       <tr>
         <th>Дата</th>
         <th>Час</th>
+        <th>Список блокування</th>
         <th>Кількість виявлених доменів</th>
         <th>Кількість нових доменів</th>
         <th>Кількість видалених</th>
