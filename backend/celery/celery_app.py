@@ -7,7 +7,7 @@ from backend.config import settings, Logger
 log = Logger().get_logger()
 
 celery_app = Celery(
-    "app.celery.celery_app",
+    "backend.celery.celery_app",
     broker=settings.redis.celery_url_backend,
     backend=settings.redis.celery_url_backend,
 )
@@ -41,8 +41,12 @@ celery_app.conf.update(
 
 
 celery_app.conf.beat_schedule = {
-    "run_parse_domain_task": {
-        "task": "backend.celery.tasks.parse_domain_task.run_parse_domain_task",
+    "run_parse_domain_honlapok_task": {
+        "task": "backend.celery.tasks.parse_domain_honlapok_task.run_parse_domain_honlapok_task",
+        "schedule": crontab(minute="*/5"),
+    },
+    "run_parse_domain_reklamoldalak_task": {
+        "task": "backend.celery.tasks.parse_domain_reklamoldalak_task.run_parse_domain_reklamoldalak_task",
         "schedule": crontab(minute="*/5"),
     },
 }
