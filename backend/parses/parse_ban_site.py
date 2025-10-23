@@ -10,9 +10,9 @@ if TYPE_CHECKING:
 
 
 class DataParser:
-    def __init__(self, settings_model: "Settings"):
-        self.settings_model = settings_model
-        self.data = self.settings_model.default_post_data
+    def __init__(self, api_settings: "Settings"):
+        self.api_settings = api_settings
+        self.data = self.api_settings.default_post_data
         self.timeout = Timeout(connect=60.0, read=60.0, write=30.0, pool=60.0)
         self.max_retries = 3  # кількість спроб при помилках з'єднання
         self.retry_delay = 5  # пауза між спробами
@@ -29,11 +29,11 @@ class DataParser:
                 await asyncio.sleep(self.retry_delay)
 
     async def get_wdt_nonce(self, client: httpx.AsyncClient) -> str:
-        html = await self.safe_get(client, self.settings_model.page_url)
+        html = await self.safe_get(client, self.api_settings.page_url)
         soup = BeautifulSoup(html, "html.parser")
         wdt_nonce = soup.find(
             "input",
-            {"id": f"wdtNonceFrontendServerSide_{self.settings_model.table_id}"},
+            {"id": f"wdtNonceFrontendServerSide_{self.api_settings.table_id}"},
         )["value"]
         if not wdt_nonce:
             raise ValueError("Не вдалося знайти wdtNonce")
@@ -44,24 +44,24 @@ class DataParser:
         client: httpx.AsyncClient,
     ) -> dict:
         resp = await client.post(
-            self.settings_model.api_url,
-            params=self.settings_model.request_params,
+            self.api_settings.api_url,
+            params=self.api_settings.request_params,
             data=self.data,
-            headers=self.settings_model.default_headers,
+            headers=self.api_settings.default_headers,
         )
         resp.raise_for_status()
         return resp.json()
 
     async def fetch_data(self) -> list:
         async with httpx.AsyncClient(
-            headers=self.settings_model.default_headers,
+            headers=self.api_settings.default_headers,
             timeout=self.timeout,
         ) as client:
             wdt_nonce = await self.get_wdt_nonce(client)
             self.data["wdtNonce"] = wdt_nonce
 
             first_response = await self.post_json(client)
-            self.data["length"] = str(first_response["recordsTotal"])
+            self.data["length"] = first_response["recordsTotal"]
 
             full_response = await self.post_json(client)
             return full_response["data"]
