@@ -1,0 +1,88 @@
+networks:
+  pbs:
+
+
+services:
+  pg:
+    image: postgres:15-alpine
+    container_name: pbs_postgres_container
+    restart: always
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_USER: ${APP_CONFIG__DB__USER}
+      POSTGRES_PASSWORD: ${APP_CONFIG__DB__PASSWORD}
+      POSTGRES_DB: ${APP_CONFIG__DB__DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${APP_CONFIG__DB__PORT}:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d blocked_sites" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    networks:
+      - pbs
+
+  redis:
+    image: redis:7
+    volumes:
+      - redis_data:/data
+    networks:
+      - pbs
+
+  backend:
+    &backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: backend_container
+    depends_on:
+      pg:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - backend_data:/app/backend/log
+    ports:
+      - "8001:8001"
+    networks:
+      pbs:
+
+  celery-worker:
+    <<: *backend
+    ports: [ ]
+    container_name: celery_worker_container
+    command: celery-worker
+    volumes:
+      - backend_data:/app/backend/log
+    networks:
+      pbs:
+
+
+  celery-beat:
+    <<: *backend
+    command: celery-beat
+    container_name: celery_beat_container
+    ports: [ ]
+    volumes:
+      - backend_data:/app/backend/log
+    networks:
+      pbs:
+
+
+  flower:
+    <<: *backend
+    command: flower
+    container_name: celery_flower_container
+    ports:
+      - "5555:5555"
+    networks:
+      pbs:
+
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_data:
