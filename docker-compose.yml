@@ -16,7 +16,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "${APP_CONFIG__DB__PORT}:5432"
+      - "${APP_CONFIG__DB__PORT}:${APP_CONFIG__DB__PORT}"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U user -d blocked_sites" ]
       interval: 5s
@@ -46,7 +46,7 @@ services:
     volumes:
       - backend_data:/app/backend/log
     ports:
-      - "8001:8001"
+      - "${APP_CONFIG__RUN__PORT}:${APP_CONFIG__RUN__PORT}"
     networks:
       pbs:
 
