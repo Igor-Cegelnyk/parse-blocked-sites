@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, field_validator, Field
 
-from backend.models import LogStatusEnum
+from backend.models import LogStatusEnum, BlockListEnum
 from backend.utils.convert_date import date_int_to_str, time_int_to_str
 
 
@@ -26,6 +26,11 @@ class DomainLogBase(BaseModel):
         ...,
         description="Статус завантаження",
         examples=[LogStatusEnum.OK.value],
+    )
+    block_list: BlockListEnum = Field(
+        ...,
+        description="Список блокування",
+        examples=[BlockListEnum.WEBSITE.value],
     )
 
 
