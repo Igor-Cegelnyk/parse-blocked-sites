@@ -1,5 +1,4 @@
 import asyncio
-from abc import ABC
 from typing import TYPE_CHECKING, List, AsyncGenerator
 
 import aiodns
@@ -11,28 +10,26 @@ if TYPE_CHECKING:
     from backend.config.config import Settings
 
 
-class BaseService(ABC):
-    model_settings: "Settings"
+class ParseService:
 
-    def process_item(self, item: list) -> DomainCreate:
-        pass
+    def __init__(self, api_settings: "Settings") -> None:
+        self.api_settings = api_settings
 
     async def fetch_domains(self) -> List[List[str]]:
-        """Імітація асинхронного отримання списку доменів (зовнішній парсер)."""
-        parser = DataParser(self.model_settings)
+        parser = DataParser(self.api_settings)
         domains = await parser.fetch_data()
         return domains
 
-    @staticmethod
-    def get_domain_from_str(domain: List[str]) -> str:
-        pass
+    def get_domain_from_str(self, domain: List[str]) -> str:
+        if self.api_settings.name == "honlapok":
+            return domain[1].split()[0]
+        return domain[0].split()[0]
 
     async def resolve_domain(
         self,
         domain: List[str],
         resolver: aiodns.DNSResolver,
     ) -> DomainCreate:
-        """Повертає перший знайдений IP або порожній рядок, якщо не знайдено"""
         domain = self.get_domain_from_str(domain)
         ip_address = None
         try:
@@ -50,7 +47,7 @@ class BaseService(ABC):
         return DomainCreate(
             domain_name=domain,
             ip_address=ip_address,
-            block_list=self.model_settings.name,
+            block_list=self.api_settings.name,
         )
 
     async def generate_domains(
@@ -58,7 +55,6 @@ class BaseService(ABC):
         domains: List[List[str]],
         concurrency: int = 100,
     ) -> AsyncGenerator[DomainCreate, None]:
-        """Асинхронно повертає Domain об'єкти (стрімінгом)."""
         resolver = aiodns.DNSResolver(nameservers=["8.8.8.8", "1.1.1.1"], timeout=7)
         semaphore = asyncio.Semaphore(concurrency)
 
