@@ -7,13 +7,9 @@ from backend.models import LogStatusEnum, BlockListEnum
 from backend.repositories.domain import DomainRepository
 from backend.repositories.domain_log import DomainLogRepository
 from backend.schemas.domain_log import DomainLogCreate
-
-# from backend.services.advertising_service import AdvertisingService
 from backend.services.domain_log_service import DomainLogService
 from backend.services.domain_service import DomainService
 from backend.services.parse_service import ParseService
-
-# from backend.services.website_service import WebsiteService
 from backend.utils.profile_decorator import profile
 
 if TYPE_CHECKING:
