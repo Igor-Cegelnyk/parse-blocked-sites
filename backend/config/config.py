@@ -15,8 +15,6 @@ class RunConfig(BaseModel):
 class ApiPrefix(BaseModel):
     domain: str = "/domain"
     history: str = "/history"
-    file_search: str = "/file-search"
-    domain_search: str = "/domain-search"
 
 
 class DatabaseConfig(BaseModel):
