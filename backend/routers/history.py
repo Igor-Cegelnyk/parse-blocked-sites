@@ -6,8 +6,7 @@ from starlette import status
 
 from backend.auto_loader.parse_domain.loader_parse_domain import loader_parse_domains
 from backend.config import settings
-from backend.config.config import WebsitesApiSettings
-from backend.models import BlockListEnum
+from backend.models import BlockListEnum, LogStatusEnum
 from backend.routers.dependencies import get_domain_log_service
 
 from backend.schemas.domain_log import DomainLogRead, DomainLogParam
@@ -29,10 +28,13 @@ router = APIRouter(
 )
 async def history(request: Request):
     templates = request.app.state.templates
-    block_lists = [e.value for e in BlockListEnum]
     return templates.TemplateResponse(
         "history.html",
-        {"request": request, "block_lists": block_lists},
+        {
+            "request": request,
+            "block_lists": [e.value for e in BlockListEnum],
+            "log_statuses": [e.value for e in LogStatusEnum],
+        },
     )
 
 
@@ -54,9 +56,18 @@ async def get_domain_logs(
         ge=0,
         description="Максимальна кількість записів для повернення",
     ),
+    log_status: LogStatusEnum = Query(None, description="Статус завантаження"),
+    block_list: BlockListEnum = Query(None, description="Список блокування"),
     domain_log_service: "DomainLogService" = Depends(get_domain_log_service),
 ):
+    filters = {}
+    if log_status is not None:
+        filters["log_status"] = LogStatusEnum(log_status)
+    if block_list is not None:
+        filters["block_list"] = BlockListEnum(block_list)
+
     domain_logs = await domain_log_service.get_all(
+        filters=filters,
         order_by="id",
         desc_order=True,
         offset=offset,

@@ -3,15 +3,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const pagination = document.getElementById("pagination");
   const manualLoadBtn = document.getElementById("manualLoadBtn");
   const blockListSelect = document.getElementById("blockListSelect");
+  const statusSelect = document.getElementById("statusSelect");
+  const showBtn = document.getElementById("showBtn");
   const PAGE_SIZE = 25;
   let currentPage = 1;
 
-  async function fetchHistory(page = 2) {
+  async function fetchHistory(page = 1) {
     const offset = (page - 1) * PAGE_SIZE;
+    const blockList = blockListSelect.value;
+    const status = statusSelect.value;
 
     tableBody.innerHTML = `
       <tr>
-        <td colspan="6" class="text-center">
+        <td colspan="7" class="text-center">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Завантаження...</span>
           </div>
@@ -19,22 +23,27 @@ document.addEventListener("DOMContentLoaded", () => {
       </tr>
     `;
 
+    const queryParams = new URLSearchParams({
+      limit: PAGE_SIZE,
+      offset,
+    });
+    if (blockList) queryParams.append("block_list", blockList);
+    if (status) queryParams.append("log_status", status);
+
     try {
-      const response = await fetch(`/history/log?limit=${PAGE_SIZE}&offset=${offset}`);
-      if (!response.ok) throw new Error("Помилка при завантаженні історії");
-
-      const logs = await response.json(); // масив записів
-
-      tableBody.innerHTML = "";
-
-      if (logs.length === 0) {
+      const response = await fetch(`/history/log?${queryParams.toString()}`);
+      if (response.status === 404) {
         tableBody.innerHTML = `
           <tr>
-            <td colspan="6" class="text-center text-muted">Немає записів</td>
+            <td colspan="7" class="text-center text-muted">Немає записів</td>
           </tr>`;
         pagination.innerHTML = "";
         return;
       }
+      if (!response.ok) throw new Error("Помилка при завантаженні історії");
+
+      const logs = await response.json();
+      tableBody.innerHTML = "";
 
       logs.forEach(log => {
         const row = document.createElement("tr");
@@ -52,10 +61,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       renderPagination(logs.length, page);
     } catch (error) {
-      console.error(error);
       tableBody.innerHTML = `
         <tr>
-          <td colspan="6" class="text-danger text-center">Не вдалося отримати дані</td>
+          <td colspan="7" class="text-danger text-center">Не вдалося отримати дані</td>
         </tr>`;
       pagination.innerHTML = "";
     }
@@ -64,7 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderPagination(itemsCount, page) {
     pagination.innerHTML = "";
 
-    // Попередня
     const prevLi = document.createElement("li");
     prevLi.className = `page-item ${page === 1 ? "disabled" : ""}`;
     prevLi.innerHTML = `<a class="page-link" href="#">Попередня</a>`;
@@ -77,7 +84,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     pagination.appendChild(prevLi);
 
-    // Наступна
     const nextLi = document.createElement("li");
     nextLi.className = `page-item ${itemsCount < PAGE_SIZE ? "disabled" : ""}`;
     nextLi.innerHTML = `<a class="page-link" href="#">Наступна</a>`;
@@ -92,10 +98,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   manualLoadBtn.addEventListener("click", async () => {
+    const selectedBlockList = blockListSelect.value;
+
+    if (!selectedBlockList) {
+      alert("Оберіть список блокування перед завантаженням");
+      return;
+    }
+
     manualLoadBtn.disabled = true;
     manualLoadBtn.textContent = "Завантаження...";
-
-    const selectedBlockList = blockListSelect.value;
 
     try {
       const response = await fetch("/history/log", {
@@ -104,10 +115,8 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ block_list: selectedBlockList }),
       });
       if (!response.ok) throw new Error("Помилка при ручному завантаженні");
-
     } catch (err) {
       alert("Не вдалося виконати ручне завантаження");
-      // console.error(err);
     } finally {
       manualLoadBtn.disabled = false;
       manualLoadBtn.textContent = "Ручне завантаження";
@@ -115,6 +124,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Початкове завантаження
+  showBtn.addEventListener("click", () => {
+    currentPage = 1;
+    fetchHistory(currentPage);
+  });
+
   fetchHistory(currentPage);
 });
