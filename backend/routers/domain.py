@@ -112,7 +112,7 @@ async def domains_excel_export(
 
 
 @router.post(
-    "/",
+    "/upload",
     summary="Повертає відфільтровані дані по доменам відповідно до вмісту файла",
     status_code=status.HTTP_200_OK,
     response_model=List[DomainRead],
@@ -121,7 +121,6 @@ async def domains_excel_export(
     },
 )
 async def upload_file(file: UploadFile = File(...)):
-    # contents = await file.read()
     # domains = []
     # if not domains:
     #     raise HTTPException(

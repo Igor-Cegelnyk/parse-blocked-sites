@@ -24,6 +24,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const response = await fetch(`${url}${url.includes("?") ? "&" : "?"}limit=${PAGE_SIZE}&offset=${offset}`);
+      if (response.status === 404) {
+        resultsTable.innerHTML = `
+          <tr><td colspan="3" class="text-center text-muted">Дані відсутні</td></tr>
+        `;
+        pagination.innerHTML = "";
+        return;
+      }
+
       if (!response.ok) throw new Error("Помилка при отриманні даних");
       const data = await response.json();
 
@@ -100,13 +108,15 @@ document.addEventListener("DOMContentLoaded", () => {
   fileInput.addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const res = await fetch("/domain/upload", { method: "POST", body: formData });
-    if (!res.ok) return alert("Помилка при завантаженні файлу!");
-    const data = await res.json();
-    renderResults(data);
+    alert("Функціонал у розробці");
+    return;
+    // const formData = new FormData();
+    // formData.append("file", file);
+    //
+    // const res = await fetch("/domain/upload", { method: "POST", body: formData });
+    // if (!res.ok) return alert("Помилка при завантаженні файлу!");
+    // const data = await res.json();
+    // renderResults(data);
   });
 
   exportBtn.addEventListener("click", async () => {
