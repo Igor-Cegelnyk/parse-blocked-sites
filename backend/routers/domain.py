@@ -1,6 +1,7 @@
+import ipaddress
 from typing import List, TYPE_CHECKING
 
-from fastapi import APIRouter, Query, Request, HTTPException
+from fastapi import APIRouter, Query, Request, HTTPException, File, UploadFile, Response
 from fastapi.responses import HTMLResponse
 from fastapi.params import Depends
 from starlette import status
@@ -23,7 +24,7 @@ router = APIRouter(
     "",
     summary="Рендерить головну сторінку та вкладку Заблоковані Домени",
     response_class=HTMLResponse,
-    name="domain",
+    name="domains",
 )
 async def domain_page(request: Request):
     templates = request.app.state.templates
@@ -31,7 +32,7 @@ async def domain_page(request: Request):
 
 
 @router.get(
-    "/all",
+    "/list",
     summary="Повертає дані по всім доменам, що зберігаються в БД",
     status_code=status.HTTP_200_OK,
     response_model=List[DomainRead],
@@ -62,6 +63,40 @@ async def get_all_domains(
 
 
 @router.get(
+    "/search",
+    summary="Пошук заблокованого домену в БД по його назві чи IP",
+    status_code=status.HTTP_200_OK,
+    response_model=List[DomainRead],
+    responses={
+        404: {"description": "Дані відсутні"},
+    },
+)
+async def get_domains(
+    domain: str = Query(
+        ...,
+        description="Назва домену чи IP адреса",
+        example="rtbet-5772.com",
+    ),
+    domain_service: "DomainService" = Depends(get_domain_service),
+):
+    try:
+        ipaddress.ip_address(domain)
+        domains = await domain_service.get_all(
+            filters={"ip_address": domain},
+        )
+    except ValueError:
+        domains = await domain_service.get_all(
+            filters={"domain_name": domain},
+        )
+    if not domains:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Дані відсутні",
+        )
+    return domains
+
+
+@router.get(
     "/excel-export",
     summary="Генерує та зберігає файл формату xlsx з усіма доменами в БД",
     response_class=HTMLResponse,
@@ -74,3 +109,23 @@ async def domains_excel_export(
     return await ExcelExportService().export_excel(
         data=domains, schema=DomainExcel, filename="blocked domains.xlsx"
     )
+
+
+@router.post(
+    "/",
+    summary="Повертає відфільтровані дані по доменам відповідно до вмісту файла",
+    status_code=status.HTTP_200_OK,
+    response_model=List[DomainRead],
+    responses={
+        404: {"description": "Дані відсутні"},
+    },
+)
+async def upload_file(file: UploadFile = File(...)):
+    # contents = await file.read()
+    # domains = []
+    # if not domains:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_404_NOT_FOUND,
+    #         detail="Дані відсутні",
+    #     )
+    return Response(status_code=status.HTTP_200_OK)

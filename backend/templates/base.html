@@ -29,12 +29,6 @@
         <a class="nav-link {% if active_tab == 'domain' %}active{% endif %}" href="{{ url_for('domain') }}">🔒 Заблоковані домени</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'domain-search' %}active{% endif %}" href="{{ url_for('domain-search') }}">🔍 Пошук</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'file-search' %}active{% endif %}" href="{{ url_for('file-search') }}">📂 Пошук по файлу</a>
-      </li>
-      <li class="nav-item">
         <a class="nav-link {% if active_tab == 'history' %}active{% endif %}" href="{{ url_for('history') }}">🕓 Історія завантажень</a>
       </li>
     </ul>
@@ -48,8 +42,6 @@
     © 2025 Search blocked sites FastAPI
   </footer>
 
-  <!-- Custom JS -->
-  <script src="{{ url_for('static', path='/js/domain.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>
