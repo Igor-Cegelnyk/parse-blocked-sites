@@ -37,7 +37,7 @@ async def parse_domains(
 
 @profile(log)
 async def loader_parse_domains(api_settings: "Settings") -> None:
-    log.info("Початок парсингу доменів по списку: %s..." % api_settings.name)
+    log.info(f"Початок парсингу доменів по списку: {api_settings.name}...")
     domain_log = DomainLogCreate(
         log_status=LogStatusEnum.OK,
         block_list=BlockListEnum(api_settings.name),
@@ -46,62 +46,38 @@ async def loader_parse_domains(api_settings: "Settings") -> None:
     async with db_helper.session_factory() as session:
         domain_service = DomainService(DomainRepository(session=session))
         domain_log_service = DomainLogService(DomainLogRepository(session=session))
-        last_log_record = await domain_log_service.get_all(
-            filters=domain_log.model_dump(exclude_unset=True),
-            order_by="id",
-            desc_order=True,
-            limit=1,
-        )
 
         try:
-            domains = await parse_domains(api_settings, last_log_record)
-            log.info("Знайдено %s заблокованих доменів" % len(domains))
+            last_log = await domain_log_service.get_all(
+                filters=domain_log.model_dump(exclude_unset=True),
+                order_by="id",
+                desc_order=True,
+                limit=1,
+            )
 
-            if len(domains) == 0:
-                domain_log.log_status = LogStatusEnum.NO_CHANGES
-                await domain_log_service.create(domain_log)
-                return None
+            parsed_domains = await parse_domains(api_settings, last_log)
 
-            domains_uniq = []
-            domain_names_set = set()
-            for domain in domains:
-                if domain.domain_name in domain_names_set:
-                    continue
-                domain_names_set.add(domain.domain_name)
-                domains_uniq.append(domain)
-
-            if domains:
-                exist_domain = await domain_service.get_all(
-                    filters={"block_list": BlockListEnum(api_settings.name)}
+            total, new_count, removed_count = (
+                await domain_service.sync_domains_from_parser(
+                    block_list=BlockListEnum(api_settings.name),
+                    parsed_domains=parsed_domains,
                 )
-                exist_domain_set = {domain.domain_name for domain in exist_domain}
+            )
 
-                new_domains = [
-                    domain
-                    for domain in domains_uniq
-                    if domain.domain_name not in exist_domain_set
-                ]
-                if new_domains:
-                    await domain_service.bulk_create(new_domains)
-
-                to_remove_domain_ids = [
-                    domain.id
-                    for domain in exist_domain
-                    if domain.domain_name not in domain_names_set
-                ]
-                if to_remove_domain_ids:
-                    await domain_service.bulk_delete_by_ids(to_remove_domain_ids)
-
-                domain_log.parse_domain_quantity = len(domains)
-                domain_log.new_domain_quantity = len(new_domains)
-                domain_log.remove_domain_quantity = len(to_remove_domain_ids)
+            domain_log.parse_domain_quantity = total
+            domain_log.new_domain_quantity = new_count
+            domain_log.remove_domain_quantity = removed_count
+            domain_log.log_status = (
+                LogStatusEnum.NO_CHANGES if total == 0 else LogStatusEnum.OK
+            )
 
             log.info(
-                "Записано: %s нових доменів та видалено: %s доменів"
-                % (domain_log.new_domain_quantity, domain_log.remove_domain_quantity)
+                f"Знайдено {total} доменів, додано {new_count}, видалено {removed_count}"
             )
             await domain_log_service.create(domain_log)
+
         except Exception as e:
+            session.rollback()
             domain_log.log_status = LogStatusEnum.FAILED
             await domain_log_service.create(domain_log)
             raise e
@@ -110,4 +86,6 @@ async def loader_parse_domains(api_settings: "Settings") -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(loader_parse_domains())
+    from backend.config import settings
+
+    asyncio.run(loader_parse_domains(settings.advertising_api))
