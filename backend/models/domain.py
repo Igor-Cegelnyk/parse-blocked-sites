@@ -37,7 +37,3 @@ class Domain(Base, IdIntPkMixin):
         default=current_time_int,
         server_default=text("CAST(to_char(now(),'HH24MISS') AS INTEGER)"),
     )
-
-    __table_args__ = (
-        UniqueConstraint("domain_name", "block_list", name="uix_domain_blocklist"),
-    )
